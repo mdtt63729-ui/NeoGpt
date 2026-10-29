@@ -48,7 +48,7 @@ class PreferencesRepository(private val context: Context) {
     suspend fun migrateToDefaultLightTheme() {
         context.dataStore.edit { prefs ->
             if (prefs[Keys.themeLightMigration] != true) {
-                prefs[Keys.themeMode] = ThemeMode.LIGHT.name
+                prefs[Keys.theme] = ThemeMode.LIGHT.name
                 prefs[Keys.themeLightMigration] = true
             }
         }

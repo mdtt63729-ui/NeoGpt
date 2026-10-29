@@ -47,7 +47,6 @@ fun NeoTopBar(
                 contentDescription = "Open sidebar",
                 tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(22.dp),
-                autoMirrored = true,
             )
         }
 
