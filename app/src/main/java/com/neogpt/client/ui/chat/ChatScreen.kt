@@ -18,7 +18,10 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -41,6 +44,7 @@ import com.neogpt.client.ui.ContainerViewModelFactory
 import com.neogpt.client.ui.chat.components.MessageRow
 import com.neogpt.client.ui.components.AttachmentSheet
 import com.neogpt.client.ui.components.Composer
+import com.neogpt.client.ui.components.ComposerDisclaimer
 import com.neogpt.client.ui.components.LoadingDots
 import com.neogpt.client.ui.components.NeoTopBar
 import com.neogpt.client.util.AttachmentResolver
@@ -111,7 +115,11 @@ fun ChatScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)),
+            .windowInsetsPadding(
+                WindowInsets.safeDrawing
+                    .only(WindowInsetsSides.Bottom)
+                    .union(WindowInsets.ime)
+            ),
     ) {
         NeoTopBar(
             modelLabel = modelLabel,
@@ -161,8 +169,12 @@ fun ChatScreen(
             sendOnEnter = state.sendOnEnter,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp),
         )
+
+        ComposerDisclaimer()
+
+        androidx.compose.foundation.layout.Spacer(Modifier.height(6.dp))
     }
 
     if (showAttachSheet) {

@@ -44,12 +44,14 @@ data class ChatModel(
 )
 
 data class AppPreferences(
-    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val themeMode: ThemeMode = ThemeMode.LIGHT,
     val baseUrl: String = "",
     val apiKey: String = "",
     val modelId: String = "gpt-5",
     val sendOnEnter: Boolean = true,
     val haptics: Boolean = true,
+    val onboardingDone: Boolean = false,
+    val displayName: String = "",
 ) {
     val isProviderConfigured: Boolean
         get() = baseUrl.isNotBlank() && modelId.isNotBlank()

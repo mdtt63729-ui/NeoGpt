@@ -1,5 +1,7 @@
 package com.neogpt.client.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -7,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
@@ -27,6 +30,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.neogpt.client.AppContainer
+import com.neogpt.client.ui.auth.AuthScreen
 import com.neogpt.client.ui.chat.ChatScreen
 import com.neogpt.client.ui.home.HomeScreen
 import com.neogpt.client.ui.models.ModelPickerSheet
@@ -52,6 +56,27 @@ fun RootScreen(container: AppContainer) {
         factory = ContainerViewModelFactory { RootViewModel(container) },
     )
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    when (state.onboardingDone) {
+        null -> {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+            )
+            return
+        }
+
+        false -> {
+            AuthScreen(
+                onSkip = viewModel::skipOnboarding,
+                onLocalProfile = viewModel::completeOnboarding,
+            )
+            return
+        }
+
+        else -> Unit
+    }
 
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(DrawerValue.Closed)

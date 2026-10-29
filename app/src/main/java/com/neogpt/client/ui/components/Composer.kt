@@ -21,11 +21,12 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Description
-import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -34,16 +35,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.neogpt.client.domain.model.Attachment
-import com.neogpt.client.ui.theme.ComposerShape
 import com.neogpt.client.ui.theme.NeoTheme
-import androidx.compose.ui.text.TextStyle
+
+private val ComposerRadius = RoundedCornerShape(24.dp)
 
 @Composable
 fun Composer(
@@ -58,7 +63,7 @@ fun Composer(
     onStop: () -> Unit,
     sendOnEnter: Boolean,
     modifier: Modifier = Modifier,
-    placeholder: String = "Ask anything",
+    placeholder: String = "Ask ChatGPT",
     autoFocus: Boolean = false,
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
@@ -67,9 +72,11 @@ fun Composer(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(ComposerShape)
-            .background(NeoTheme.colors.composerField)
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+            .shadow(elevation = 3.dp, shape = ComposerRadius, clip = false)
+            .clip(ComposerRadius)
+            .background(NeoTheme.colors.composerBackground)
+            .border(1.dp, NeoTheme.colors.composerBorder, ComposerRadius)
+            .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
     ) {
         if (attachments.isNotEmpty()) {
             LazyRow(
@@ -88,29 +95,33 @@ fun Composer(
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 32.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             NeoIconButton(
-                icon = Icons.Rounded.Add,
+                icon = Icons.Outlined.Add,
                 contentDescription = "Add photos and files",
                 onClick = onAddAttachment,
                 tint = MaterialTheme.colorScheme.onSurface,
-                containerSize = 36.dp,
-                iconSize = 22.dp,
+                containerSize = 32.dp,
+                iconSize = 24.dp,
             )
 
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 6.dp),
+                    .padding(horizontal = 8.dp),
                 contentAlignment = Alignment.CenterStart,
             ) {
                 if (value.isEmpty()) {
                     Text(
                         text = placeholder,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = NeoTheme.colors.placeholder,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 BasicTextField(
@@ -119,10 +130,10 @@ fun Composer(
                     textStyle = MaterialTheme.typography.bodyLarge.merge(
                         TextStyle(color = MaterialTheme.colorScheme.onSurface)
                     ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
+                    cursorBrush = SolidColor(NeoTheme.colors.voiceAccent),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 36.dp, max = 180.dp),
+                        .heightIn(min = 32.dp, max = 180.dp),
                     maxLines = 8,
                     keyboardOptions = KeyboardOptions(
                         imeAction = if (sendOnEnter) ImeAction.Send else ImeAction.Default,
@@ -139,40 +150,87 @@ fun Composer(
             }
 
             when {
-                streaming -> NeoIconButton(
+                streaming -> CircleAction(
                     icon = Icons.Rounded.Stop,
                     contentDescription = "Stop generating",
                     onClick = onStop,
+                    container = NeoTheme.colors.sendEnabled,
                     tint = NeoTheme.colors.onSend,
-                    background = NeoTheme.colors.sendEnabled,
-                    containerSize = 36.dp,
-                    iconSize = 20.dp,
                 )
 
-                canSend -> NeoIconButton(
+                canSend -> CircleAction(
                     icon = Icons.Rounded.ArrowUpward,
                     contentDescription = "Send",
                     onClick = {
                         onSend()
                         keyboard?.hide()
                     },
+                    container = NeoTheme.colors.sendEnabled,
                     tint = NeoTheme.colors.onSend,
-                    background = NeoTheme.colors.sendEnabled,
-                    containerSize = 36.dp,
-                    iconSize = 20.dp,
                 )
 
-                else -> NeoIconButton(
-                    icon = Icons.Rounded.Mic,
-                    contentDescription = "Voice input",
-                    onClick = onVoiceInput,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    containerSize = 36.dp,
-                    iconSize = 22.dp,
-                )
+                else -> Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    NeoIconButton(
+                        icon = Icons.Outlined.Mic,
+                        contentDescription = "Voice input",
+                        onClick = onVoiceInput,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        containerSize = 36.dp,
+                        iconSize = 22.dp,
+                    )
+                    CircleAction(
+                        icon = Icons.Rounded.GraphicEq,
+                        contentDescription = "Voice mode",
+                        onClick = onVoiceInput,
+                        container = NeoTheme.colors.voiceAccent,
+                        tint = Color.White,
+                    )
+                }
             }
         }
     }
+}
+
+@Composable
+private fun CircleAction(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    container: Color,
+    tint: Color,
+) {
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .background(container)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = tint,
+            modifier = Modifier.size(18.dp),
+        )
+    }
+}
+
+/** Small centered line shown under the composer, matching the original app. */
+@Composable
+fun ComposerDisclaimer(modifier: Modifier = Modifier) {
+    Text(
+        text = "ChatGPT can make mistakes, so check anything important.",
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, start = 24.dp, end = 24.dp),
+    )
 }
 
 @Composable
@@ -234,7 +292,7 @@ private fun AttachmentChip(
             Icon(
                 imageVector = Icons.Rounded.Close,
                 contentDescription = "Remove attachment",
-                tint = androidx.compose.ui.graphics.Color.White,
+                tint = Color.White,
                 modifier = Modifier.size(14.dp),
             )
         }

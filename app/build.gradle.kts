@@ -1,3 +1,25 @@
+import java.util.Properties
+
+// Release signing: values come from keystore.properties (local) or from the
+// environment (CI). The file is git-ignored; the CI workflow writes it from
+// repository secrets at build time.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
+}
+
+fun signingValue(propertyKey: String, envKey: String): String? =
+    keystoreProperties.getProperty(propertyKey) ?: System.getenv(envKey)
+
+val releaseStoreFile = signingValue("storeFile", "SIGNING_KEYSTORE_PATH")
+val releaseStorePassword = signingValue("storePassword", "KEYSTORE_PASSWORD")
+val releaseKeyAlias = signingValue("keyAlias", "KEY_ALIAS")
+val releaseKeyPassword = signingValue("keyPassword", "KEY_PASSWORD")
+val hasReleaseSigning = releaseStoreFile != null &&
+    releaseStorePassword != null && releaseKeyAlias != null && releaseKeyPassword != null
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -13,15 +35,30 @@ android {
         applicationId = "com.neogpt.client"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

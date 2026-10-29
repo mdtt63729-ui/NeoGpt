@@ -8,7 +8,11 @@ import com.neogpt.client.data.repository.RoomConversationRepository
 import com.neogpt.client.domain.repository.ChatCompletionClient
 import com.neogpt.client.domain.repository.ConversationRepository
 import com.neogpt.client.network.OpenAiCompatibleClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 
 class AppContainer(context: Context) {
     val preferences: PreferencesRepository = PreferencesRepository(context)
@@ -27,9 +31,12 @@ class NeoGptApp : Application() {
     lateinit var container: AppContainer
         private set
 
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
+        appScope.launch { container.preferences.migrateToDefaultLightTheme() }
     }
 }
 

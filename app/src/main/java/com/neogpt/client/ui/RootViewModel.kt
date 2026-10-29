@@ -20,6 +20,8 @@ data class RootUiState(
     val activeConversationId: String? = null,
     val modelId: String = "gpt-5",
     val providerConfigured: Boolean = false,
+    val onboardingDone: Boolean? = null,
+    val displayName: String = "",
 ) {
     val modelLabel: String get() = ModelCatalog.displayName(modelId)
 }
@@ -38,6 +40,8 @@ class RootViewModel(private val container: AppContainer) : ViewModel() {
             activeConversationId = activeId,
             modelId = prefs.modelId,
             providerConfigured = prefs.isProviderConfigured,
+            onboardingDone = prefs.onboardingDone,
+            displayName = prefs.displayName,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -51,6 +55,18 @@ class RootViewModel(private val container: AppContainer) : ViewModel() {
 
     fun selectModel(modelId: String) {
         viewModelScope.launch { container.preferences.setModel(modelId) }
+    }
+
+    fun skipOnboarding() {
+        viewModelScope.launch { container.preferences.skipOnboarding() }
+    }
+
+    fun completeOnboarding(name: String) {
+        viewModelScope.launch { container.preferences.completeOnboarding(name) }
+    }
+
+    fun showWelcomeAgain() {
+        viewModelScope.launch { container.preferences.resetOnboarding() }
     }
 
     fun renameConversation(id: String, title: String) {

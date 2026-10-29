@@ -44,6 +44,14 @@ data class NeoExtendedColors(
     val sendDisabled: Color,
     val onSend: Color,
     val scrim: Color,
+    val composerBackground: Color,
+    val composerBorder: Color,
+    val suggestionTint: Color,
+    val voiceAccent: Color,
+    val accentSoft: Color,
+    val accentText: Color,
+    val placeholder: Color,
+    val topBarCircle: Color,
 )
 
 internal val DarkExtended = NeoExtendedColors(
@@ -60,6 +68,14 @@ internal val DarkExtended = NeoExtendedColors(
     sendDisabled = Color(0xFF2F2F2F),
     onSend = Color(0xFF0D0D0D),
     scrim = Color(0x99000000),
+    composerBackground = Color(0xFF2F2F2F),
+    composerBorder = Color(0xFF3C3C3C),
+    suggestionTint = DarkOnSurfaceVariant,
+    voiceAccent = Color(0xFF3566EF),
+    accentSoft = Color(0xFF20304A),
+    accentText = Color(0xFF9BC1FF),
+    placeholder = Color(0xFF9B9B9B),
+    topBarCircle = Color(0xFF2A2A2A),
 )
 
 internal val LightExtended = NeoExtendedColors(
@@ -76,4 +92,12 @@ internal val LightExtended = NeoExtendedColors(
     sendDisabled = Color(0xFFEDEDED),
     onSend = Color(0xFFFFFFFF),
     scrim = Color(0x66000000),
+    composerBackground = Color(0xFFFFFFFF),
+    composerBorder = Color(0xFFEBEBEB),
+    suggestionTint = Color(0xFF5C5C5C),
+    voiceAccent = Color(0xFF3566EF),
+    accentSoft = Color(0xFFE8F4FF),
+    accentText = Color(0xFF3B82F1),
+    placeholder = Color(0xFF8F8F8F),
+    topBarCircle = Color(0xFFFFFFFF),
 )

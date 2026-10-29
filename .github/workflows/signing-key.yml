@@ -1,0 +1,111 @@
+name: Generate signing key
+
+# Creates the release keystore and prints the four values that must be stored as
+# repository secrets:
+#   KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
+#
+# Run it from the Actions tab -> "Generate signing key" -> Run workflow.
+# Keep the downloaded artifact somewhere safe: losing the key means you can never
+# update an already published app.
+
+on:
+  workflow_dispatch:
+    inputs:
+      key_alias:
+        description: 'Key alias'
+        required: false
+        default: 'neogpt'
+      validity_days:
+        description: 'Certificate validity in days'
+        required: false
+        default: '10950'
+      store_password:
+        description: 'Keystore password (leave empty to generate a random one)'
+        required: false
+        default: ''
+      key_password:
+        description: 'Key password (leave empty to reuse the keystore password)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    name: Generate keystore
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Generate the keystore
+        id: gen
+        env:
+          ALIAS: ${{ inputs.key_alias }}
+          VALIDITY: ${{ inputs.validity_days }}
+          STORE_PW_IN: ${{ inputs.store_password }}
+          KEY_PW_IN: ${{ inputs.key_password }}
+        run: |
+          set -euo pipefail
+          ALIAS="${ALIAS:-neogpt}"
+          VALIDITY="${VALIDITY:-10950}"
+          if [ -z "${STORE_PW_IN:-}" ]; then
+            STORE_PW=$(openssl rand -base64 36 | tr -d '\n=+/' | cut -c1-28)
+          else
+            STORE_PW="$STORE_PW_IN"
+          fi
+          KEY_PW="${KEY_PW_IN:-$STORE_PW}"
+
+          keytool -genkeypair -v \
+            -keystore release.jks -storetype PKCS12 \
+            -alias "$ALIAS" -keyalg RSA -keysize 4096 -validity "$VALIDITY" \
+            -storepass "$STORE_PW" -keypass "$KEY_PW" \
+            -dname "CN=NeoGPT, OU=Android, O=NeoGPT, L=Kolkata, ST=West Bengal, C=IN"
+
+          BASE64=$(base64 -w0 release.jks)
+
+          # Mask the values so they do not leak into public logs when this repo is public.
+          echo "::add-mask::$STORE_PW"
+          echo "::add-mask::$KEY_PW"
+          echo "::add-mask::$BASE64"
+
+          {
+            echo "## Signing secrets generated"
+            echo ""
+            echo "Add these four values under **Settings → Secrets and variables → Actions → New repository secret**."
+            echo ""
+            echo "| Secret name | Value |"
+            echo "|---|---|"
+            echo "| \`KEY_ALIAS\` | \`$ALIAS\` |"
+            echo "| \`KEYSTORE_PASSWORD\` | \`$STORE_PW\` |"
+            echo "| \`KEY_PASSWORD\` | \`$KEY_PW\` |"
+            echo "| \`KEYSTORE_BASE64\` | see the \`signing-secrets.txt\` artifact (one long line) |"
+            echo ""
+            echo "Certificate fingerprint:"
+            echo '```'
+            keytool -list -v -keystore release.jks -storepass "$STORE_PW" | grep -E "SHA256|Owner|Valid"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          {
+            echo "KEY_ALIAS=$ALIAS"
+            echo "KEYSTORE_PASSWORD=$STORE_PW"
+            echo "KEY_PASSWORD=$KEY_PW"
+            echo "KEYSTORE_BASE64=$BASE64"
+          } > signing-secrets.txt
+
+          echo "keystore_bytes=$(stat -c%s release.jks)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload keystore and the four values
+        uses: actions/upload-artifact@v4
+        with:
+          name: signing-key-and-secrets
+          path: |
+            release.jks
+            signing-secrets.txt
+          retention-days: 1
+          if-no-files-found: error

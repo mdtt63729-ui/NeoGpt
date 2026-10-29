@@ -21,6 +21,9 @@ class PreferencesRepository(private val context: Context) {
         val model = stringPreferencesKey("selected_model")
         val sendOnEnter = booleanPreferencesKey("send_on_enter")
         val haptics = booleanPreferencesKey("haptics")
+        val onboardingDone = booleanPreferencesKey("onboarding_done")
+        val displayName = stringPreferencesKey("display_name")
+        val themeLightMigration = booleanPreferencesKey("theme_light_migration_v2")
     }
 
     val preferences: Flow<AppPreferences> = context.dataStore.data.map { prefs ->
@@ -33,7 +36,22 @@ class PreferencesRepository(private val context: Context) {
             modelId = prefs[Keys.model] ?: "gpt-5",
             sendOnEnter = prefs[Keys.sendOnEnter] ?: true,
             haptics = prefs[Keys.haptics] ?: true,
+            onboardingDone = prefs[Keys.onboardingDone] ?: false,
+            displayName = prefs[Keys.displayName].orEmpty(),
         )
+    }
+
+    /**
+     * One-time migration: this build defaults to the white theme, so an install
+     * that still carries the old "follow system" value is switched once.
+     */
+    suspend fun migrateToDefaultLightTheme() {
+        context.dataStore.edit { prefs ->
+            if (prefs[Keys.themeLightMigration] != true) {
+                prefs[Keys.themeMode] = ThemeMode.LIGHT.name
+                prefs[Keys.themeLightMigration] = true
+            }
+        }
     }
 
     suspend fun setThemeMode(mode: ThemeMode) {
@@ -58,5 +76,24 @@ class PreferencesRepository(private val context: Context) {
 
     suspend fun setHaptics(enabled: Boolean) {
         context.dataStore.edit { it[Keys.haptics] = enabled }
+    }
+
+    /**
+     * Stores a local-only profile name (never sent anywhere) and marks the
+     * welcome screen as completed so the app opens straight into chat.
+     */
+    suspend fun completeOnboarding(name: String) {
+        context.dataStore.edit {
+            it[Keys.displayName] = name.trim()
+            it[Keys.onboardingDone] = true
+        }
+    }
+
+    suspend fun skipOnboarding() {
+        context.dataStore.edit { it[Keys.onboardingDone] = true }
+    }
+
+    suspend fun resetOnboarding() {
+        context.dataStore.edit { it[Keys.onboardingDone] = false }
     }
 }

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neogpt.client.AppContainer
 import com.neogpt.client.domain.model.ModelCatalog
+import com.neogpt.client.domain.model.ProviderPresets
 import com.neogpt.client.domain.model.ThemeMode
 import com.neogpt.client.network.OpenAiCompatibleClient
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +23,8 @@ data class SettingsUiState(
     val apiKey: String = "",
     val modelId: String = "gpt-5",
     val sendOnEnter: Boolean = true,
+    val displayName: String = "",
+    val availableModels: List<String> = emptyList(),
     val testing: Boolean = false,
     val testResult: String? = null,
     val message: String? = null,
@@ -46,6 +49,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
                             apiKey = prefs.apiKey,
                             modelId = prefs.modelId,
                             sendOnEnter = prefs.sendOnEnter,
+                            displayName = prefs.displayName,
                         )
                     }
                 } else {
@@ -53,6 +57,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
                         it.copy(
                             themeMode = prefs.themeMode,
                             sendOnEnter = prefs.sendOnEnter,
+                            displayName = prefs.displayName,
                         )
                     }
                 }
@@ -116,19 +121,74 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
                         .apply { if (current.apiKey.isNotBlank()) header("Authorization", "Bearer ${current.apiKey.trim()}") }
                         .build()
                     client.newCall(request).execute().use { response ->
-                        if (response.isSuccessful) {
+                        val body = response.body?.string().orEmpty()
+                        if (!response.isSuccessful) {
+                            return@runCatching Triple(
+                                "Endpoint answered HTTP ${response.code}. Some providers do not expose /models; sending a message still works.",
+                                emptyList<String>(),
+                                false,
+                            )
+                        }
+                        val ids = runCatching {
+                            val data = org.json.JSONObject(body).optJSONArray("data") ?: org.json.JSONArray()
+                            (0 until data.length()).mapNotNull { index ->
+                                data.optJSONObject(index)?.optString("id")?.takeIf { it.isNotBlank() }
+                            }.distinct().take(60)
+                        }.getOrDefault(emptyList())
+                        val summary = if (ids.isEmpty()) {
                             "Connected. The endpoint answered HTTP ${response.code}."
                         } else {
-                            "Endpoint answered HTTP ${response.code}. Some providers do not expose /models; sending a message still works."
+                            "Connected. Found ${ids.size} models; tap one below to use it."
                         }
+                        Triple(summary, ids, false)
                     }
                 }.getOrElse { error ->
-                    "Could not reach the endpoint: ${error.message ?: error.javaClass.simpleName}"
+                    Triple(
+                        "Could not reach the endpoint: ${error.message ?: error.javaClass.simpleName}",
+                        emptyList<String>(),
+                        true,
+                    )
                 }
             }
-            _state.update { it.copy(testing = false, testResult = result) }
+            _state.update {
+                it.copy(
+                    testing = false,
+                    testResult = result.first,
+                    availableModels = if (result.third) it.availableModels else result.second,
+                )
+            }
         }
     }
+
+
+    fun showWelcomeAgain() {
+        viewModelScope.launch { container.preferences.resetOnboarding() }
+    }
+
+    /**
+     * Fills and saves a provider preset. "Ollama" and "LM Studio" assume a
+     * model server on your own computer; no key is required, and usage is
+     * limited only by that machine.
+     */
+    fun applyPreset(presetName: String) {
+        val preset = ProviderPresets.byName(presetName) ?: return
+        val apiKey = _state.value.apiKey
+        _state.update {
+            it.copy(baseUrl = preset.baseUrl, modelId = preset.modelId, message = null)
+        }
+        viewModelScope.launch {
+            container.preferences.setProvider(preset.baseUrl, apiKey, preset.modelId)
+            val hint = if (preset.requiresKey && apiKey.isBlank()) {
+                " ${preset.name} needs an API key: paste it below, then tap Save."
+            } else {
+                " Tap Test connection."
+            }
+            _state.update {
+                it.copy(message = "${preset.name} preset applied. ${preset.note}$hint")
+            }
+        }
+    }
+
 
     fun clearAllChats() {
         viewModelScope.launch {

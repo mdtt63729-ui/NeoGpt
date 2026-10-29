@@ -24,3 +24,10 @@ Thumbs.db
 
 # Generated Room schema is kept, but its journals are not.
 app/schemas/**/*.db-journal
+
+# Release signing material — never commit these.
+keystore.properties
+*.jks
+*.keystore
+release.jks
+signing-secrets.txt

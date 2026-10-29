@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -53,10 +55,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.neogpt.client.AppContainer
 import com.neogpt.client.domain.model.ThemeMode
 import com.neogpt.client.ui.ContainerViewModelFactory
+import com.neogpt.client.domain.model.ProviderPresets
 import com.neogpt.client.ui.components.NeoIconButton
 import com.neogpt.client.ui.theme.NeoTheme
 import com.neogpt.client.ui.theme.PillShape
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     container: AppContainer,
@@ -102,6 +106,26 @@ fun SettingsScreen(
                 .padding(horizontal = 20.dp, vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            SectionHeader("Account")
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = state.displayName.ifBlank { "Guest — no account" },
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            TextButton(
+                onClick = viewModel::showWelcomeAgain,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+            ) { Text("Show welcome screen again") }
+
+            Spacer(Modifier.height(6.dp))
             SectionHeader("Appearance")
             ThemeMode.entries.forEach { mode ->
                 RadioRow(
@@ -118,8 +142,32 @@ fun SettingsScreen(
             Spacer(Modifier.height(6.dp))
             SectionHeader("Provider")
             Text(
-                text = "This build talks to any OpenAI-compatible chat completions endpoint. Requests go directly from this device to the URL you enter.",
+                text = "This build talks to any OpenAI-compatible chat completions endpoint. Requests go directly from this device to the URL you enter. There is no bundled account server and no free ChatGPT API: usage is billed by the provider you choose.",
                 style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ProviderPresets.all.forEach { preset ->
+                    Text(
+                        text = preset.name,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .clip(PillShape)
+                            .border(1.dp, NeoTheme.colors.chipBorder, PillShape)
+                            .clickable { viewModel.applyPreset(preset.name) }
+                            .padding(horizontal = 12.dp, vertical = 7.dp),
+                    )
+                }
+            }
+            Text(
+                text = "Pick a provider, paste its API key, and tap Save. Ollama and LM Studio run on your own computer, so they need no key. Any other OpenAI-compatible endpoint works too: just type its base URL and model id.",
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
@@ -167,6 +215,42 @@ fun SettingsScreen(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 modifier = Modifier.fillMaxWidth(),
             )
+
+            if (state.availableModels.isNotEmpty()) {
+                Text(
+                    text = "Models reported by this provider",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    state.availableModels.forEach { id ->
+                        val selected = state.modelId == id
+                        Text(
+                            text = id,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier
+                                .clip(PillShape)
+                                .border(
+                                    1.dp,
+                                    if (selected) MaterialTheme.colorScheme.primary else NeoTheme.colors.chipBorder,
+                                    PillShape,
+                                )
+                                .clickable { viewModel.updateModelId(id) }
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                        )
+                    }
+                }
+                Text(
+                    text = "Suggested ids",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
             Row(
                 modifier = Modifier

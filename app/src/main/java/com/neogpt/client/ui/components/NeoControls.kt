@@ -7,16 +7,17 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.neogpt.client.ui.theme.NeoTheme
@@ -71,27 +73,32 @@ fun ModelPill(
 ) {
     Row(
         modifier = modifier
+            .height(32.dp)
+            .widthIn(max = 200.dp)
             .clip(PillShape)
+            .background(NeoTheme.colors.accentSoft)
             .clickable(role = Role.Button, onClick = onClick)
-            .border(1.dp, NeoTheme.colors.chipBorder, PillShape)
-            .padding(start = 14.dp, end = 8.dp, top = 7.dp, bottom = 7.dp),
+            .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
+        Icon(
+            imageVector = Icons.Rounded.AutoAwesome,
+            contentDescription = null,
+            tint = NeoTheme.colors.accentText,
+            modifier = Modifier.size(16.dp),
+        )
         Text(
             text = label,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Icon(
-            imageVector = Icons.Rounded.KeyboardArrowDown,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = NeoTheme.colors.accentText,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
+
 
 @Composable
 fun LoadingDots(
