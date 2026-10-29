@@ -1,0 +1,26 @@
+# Gradle
+.gradle/
+build/
+captures/
+local.properties
+.externalNativeBuild
+.cxx
+*.iml
+
+# Android Studio
+.idea/
+*.hprof
+
+# Keystore / secrets — never commit these.
+*.jks
+*.keystore
+keystore.properties
+secrets.properties
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated Room schema is kept, but its journals are not.
+app/schemas/**/*.db-journal
