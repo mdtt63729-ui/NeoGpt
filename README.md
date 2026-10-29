@@ -32,12 +32,15 @@ affiliated with or endorsed by OpenAI. "ChatGPT" is a trademark of OpenAI.
 
 ## Download the APK
 
-Every push to `main` builds a debug APK on GitHub Actions:
+**Latest build:** [NeoGPT-1.0.0-debug.apk](https://github.com/mdtt63729-ui/NeoGpt/releases/download/v1.0.0/NeoGPT-1.0.0-debug.apk)
+from the [v1.0.0 release](https://github.com/mdtt63729-ui/NeoGpt/releases/latest) —
+download it on the phone, then allow "install unknown apps" for your browser or
+file manager.
 
-1. Open the [**Actions**](https://github.com/mdtt63729-ui/NeoGpt/actions/workflows/android.yml) tab.
-2. Pick the newest green **Android CI** run.
-3. Download the **NeoGPT-debug-apk** artifact and install `app-debug.apk`
-   (allow "install unknown apps" for your browser or file manager).
+Every push to `main` also builds a fresh APK on GitHub Actions: open the
+[**Actions**](https://github.com/mdtt63729-ui/NeoGpt/actions/workflows/android.yml)
+tab, pick the newest green **Android CI** run, and download the
+**NeoGPT-debug-apk** artifact.
 
 The APK is signed with the standard debug key, so it installs beside any other
 app but is not suitable for the Play Store.
